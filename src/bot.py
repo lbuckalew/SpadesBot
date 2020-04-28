@@ -147,7 +147,11 @@ async def deal(ctx):
             spadesBot.game.playerAction(player, PLAYER_ACTIONS.DEAL, 0)
 
         response = spadesBot.game.notification
-        await ctx.send(WRAP_RESPONSE(response))
+        await ctx.send(WRAP_RESPONSE("A game hasn't been created yet. Make one with \'>game [score]\'"))
+        
+        print(ctx)
+        print(ctx.guild)
+
 
 helpString = "Make a bet where <betInput> can be any number, \'n\' for nil, or \'tth\' for ten-two-hundred."
 @bot.command(name="bet", help=helpString)
