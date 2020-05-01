@@ -61,7 +61,7 @@ def BET2STRING(d):
     for t in d['teams']:
         p1 = t.players[0]
         p2 = t.players[1]
-        temp = "{} ({}/{}) >>> {} ({}/{}) & {} ({}/{})\n"
+        temp = "__**{} ({}/{}):**__    {} ({}/{})    {} ({}/{})\n"
         temp = temp.format(t.name, t.getNumBooks(), t.getBetNumerical(), p1.name, p1.getNumBooks(), p1.bet.name, p2.name, p2.getNumBooks(), p2.bet.name)
         s = s + temp
     return s
@@ -75,11 +75,23 @@ class SpadesBot:
     def run(self):
         self.bot.run(TOKEN)
 
-    def reset(self, kwargs={"converter": {}, "teams": [], "players": []}):
+    def reset(self, kwargs={"converter": {}, "teams": [], "players": [], "users": []}):
         self.user_conversion = kwargs['converter']
         self.game = None
         self.teams = kwargs['teams']
         self.players = kwargs['players']
+        self.users = kwargs['users']
+
+    async def notifyUser(self, user, response):
+        if user.dm_channel is None:
+            await user.create_dm()
+        await user.dm_channel.send(WRAP_RESPONSE(response))       
+
+    async def notifyAll(self, response):
+        for u in self.users:
+            if u.dm_channel is None:
+                await u.create_dm()
+            await u.dm_channel.send(WRAP_RESPONSE(response))
 
 bot = commands.Bot(command_prefix='>')
 spadesBot = SpadesBot(bot)
@@ -89,12 +101,14 @@ helpString = "Assemble a fantastic team."
 async def start_new_team(ctx, teamName, user1, user2):
     if len(spadesBot.teams) >= 2:
         spadesBot.reset()
+        print("bot reset")
 
     user1 = STRIP_USER_MENTION(user1)
     user2 = STRIP_USER_MENTION(user2)
 
     user1 = discord.utils.find(lambda m: m.id == user1, ctx.channel.guild.members)
     user2 = discord.utils.find(lambda m: m.id == user2, ctx.channel.guild.members)
+    spadesBot.users.extend([user1, user2])
 
     player1 = Player(user1.id, user1.name)
     player2 = Player(user2.id, user2.name)
@@ -113,7 +127,7 @@ async def start_new_team(ctx, teamName, user1, user2):
         response = response + " You need one more team to start a game."
     elif len(spadesBot.teams) == 2:
         response = response + " Both teams are here, start a game with -game <maxScore>."
-    await ctx.send(WRAP_RESPONSE(response))
+    await spadesBot.notifyAll(response)
 
 helpString = "Start a new game. Two teams must be created before this command."
 @bot.command(name="game", help=helpString)
@@ -126,7 +140,7 @@ async def start_new_game(ctx, maxScore: int):
     elif numTeams == 2:
         spadesBot.game = Game(spadesBot.teams, maxScore)
         response = spadesBot.game.notification
-    await ctx.send(WRAP_RESPONSE(response))
+    await spadesBot.notifyAll(response)
 
 helpString = "Deal cards."
 @bot.command(name="deal", help=helpString)
@@ -147,11 +161,7 @@ async def deal(ctx):
             spadesBot.game.playerAction(player, PLAYER_ACTIONS.DEAL, 0)
 
         response = spadesBot.game.notification
-        await ctx.send(WRAP_RESPONSE("A game hasn't been created yet. Make one with \'>game [score]\'"))
-        
-        print(ctx)
-        print(ctx.guild)
-
+        await spadesBot.notifyAll(response)
 
 helpString = "Make a bet where <betInput> can be any number, \'n\' for nil, or \'tth\' for ten-two-hundred."
 @bot.command(name="bet", help=helpString)
@@ -180,7 +190,7 @@ async def bet(ctx, betInput):
         spadesBot.game.playerAction(player, PLAYER_ACTIONS.BET, bet)
 
     response = spadesBot.game.notification
-    await ctx.send(WRAP_RESPONSE(response))
+    await spadesBot.notifyAll(response)
 
 helpString = "Play a card where <cardIndex> is the order the card is in your hand."
 @bot.command(name="play", help=helpString)
@@ -198,7 +208,7 @@ async def play(ctx, cardIndex: int):
         spadesBot.game.playerAction(player, PLAYER_ACTIONS.PLAY, cardIndex)
 
     response = spadesBot.game.notification
-    await ctx.send(response)
+    await spadesBot.notifyAll(response)
 
 helpString = "Ask to see your hand."
 @bot.command(name="hand", help=helpString)
@@ -224,7 +234,7 @@ async def show_betting_info(ctx):
     player = spadesBot.user_conversion[str(userid)]
 
     d = spadesBot.game.getBettingInfo(dict)
-    await ctx.send(WRAP_RESPONSE(BET2STRING(d)))
+    await spadesBot.notifyUser(ctx.author, BET2STRING(d))
 
 helpString = "Ask to see the current game's info."
 @bot.command(name="show", help=helpString)
@@ -240,7 +250,7 @@ async def show_game(ctx):
     d = spadesBot.game.getPileInfo(dict)
     response = response + CARDS2STRING(d)
 
-    await ctx.send(WRAP_RESPONSE(response))
+    await spadesBot.notifyUser(ctx.author, response)
 
 helpString = "Have a rematch with the same teams. The dealer gets rotated."
 @bot.command(name="rematch", help=helpString)
@@ -250,10 +260,10 @@ async def rematch(ctx, teamName, user1, user2):
     players = spadesBot.players
     maxScore = spadesBot.game.maxScore
 
-    spadesBot.reset({"converter": uc, "teams": teams, "players": players})
+    spadesBot.reset({"converter": uc, "teams": teams, "players": players, "users": []})
 
     spadesBot.game = Game(spadesBot.teams, maxScore)
     response = spadesBot.game.notification
-    await ctx.send(WRAP_RESPONSE(response))
+    await spadesBot.notifyAll(response)
 
 spadesBot.run()
