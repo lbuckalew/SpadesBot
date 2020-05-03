@@ -75,12 +75,18 @@ class SpadesBot:
     def run(self):
         self.bot.run(TOKEN)
 
-    def reset(self, kwargs={"converter": {}, "teams": [], "players": [], "users": []}):
-        self.user_conversion = kwargs['converter']
-        self.game = None
-        self.teams = kwargs['teams']
-        self.players = kwargs['players']
-        self.users = kwargs['users']
+    def reset(self, kwargs=None):
+        if kwargs == None:
+            self.user_conversion = {}
+            self.teams = []
+            self.players = []
+            self.users = []
+        else:
+            self.user_conversion = kwargs['converter']
+            self.game = None
+            self.teams = kwargs['teams']
+            self.players = kwargs['players']
+            self.users = kwargs['users']
 
     async def notifyUser(self, user, response):
         if user.dm_channel is None:
@@ -101,7 +107,6 @@ helpString = "Assemble a fantastic team."
 async def start_new_team(ctx, teamName, user1, user2):
     if len(spadesBot.teams) >= 2:
         spadesBot.reset()
-        print("bot reset")
 
     user1 = STRIP_USER_MENTION(user1)
     user2 = STRIP_USER_MENTION(user2)
