@@ -6,7 +6,7 @@ import re
 import sys
 import time
 from daemon import daemon
-from pyspades import *
+from pyspades import CARD_SUITS, Player, Team, Game, PLAYER_ACTIONS, BETS
 import discord
 from discord.ext import commands
 
