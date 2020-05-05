@@ -187,27 +187,33 @@ if __name__ == "__main__":
             player = spadesBot.user_conversion[str(userid)]
 
             bet = BETS.NONE
-            try:
-                betInput = int(betInput)
-                if betInput <= 13:
-                    bet = BETS(betInput)
-            except ValueError:
-                if betInput == 'n':
-                    bet = BETS.NIL
-                elif betInput == "tth":
-                    bet = BETS.TTH
-
-            # Debug only
-            if len(spadesBot.user_conversion) < 4:
-                for p in spadesBot.players:
-                    if p.id == player.id:
-                        if spadesBot.game.playerAction(p, PLAYER_ACTIONS.BET, bet):
-                            break
+            if betInput == 'n':
+                bet = BETS.NIL
+            elif betInput == "tth":
+                bet = BETS.TTH
             else:
-                spadesBot.game.playerAction(player, PLAYER_ACTIONS.BET, bet)
+                try:
+                    betInput = int(betInput)
+                    if betInput <= 13:
+                        bet = BETS(betInput)
+                except ValueError:
+                    pass
 
-            response = spadesBot.game.notification
-            await spadesBot.notifyAll(response)
+            if bet is None:
+                s = "{} is an invalid bet. See \'.s help bet\' for more info.".format(betInput)
+                await spadesBot.notifyUser(ctx.author, s)
+            else:
+                # Debug only
+                if len(spadesBot.user_conversion) < 4:
+                    for p in spadesBot.players:
+                        if p.id == player.id:
+                            if spadesBot.game.playerAction(p, PLAYER_ACTIONS.BET, bet):
+                                break
+                else:
+                    spadesBot.game.playerAction(player, PLAYER_ACTIONS.BET, bet)
+
+                response = spadesBot.game.notification
+                await spadesBot.notifyAll(response)
 
     helpString = "Play a card where <cardIndex> is the order the card is in your hand."
     @bot.command(name="play", help=helpString)
