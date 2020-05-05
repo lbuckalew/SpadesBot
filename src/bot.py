@@ -141,7 +141,7 @@ if __name__ == "__main__":
         if len(spadesBot.teams) == 1:
             response = response + " You need one more team to start a game."
         elif len(spadesBot.teams) == 2:
-            response = response + " Both teams are here, start a game with .s game <max score>."
+            response = response + " Both teams are here, start a game with \'.s game <max score>\'."
         await spadesBot.notifyAll(response)
 
     helpString = "Start a new game. Two teams must be created before this command."
@@ -151,7 +151,7 @@ if __name__ == "__main__":
         if numTeams <= 1:
             response = "Need to make 2 teams, there's only {}.".format(numTeams)
         elif numTeams > 2:
-            response = "There are too many teams. Get rid of them by making new teams with \".s team <team name> <player 1 name> <player 2 name>\"."
+            response = "There are too many teams. Get rid of them by making new teams with \'.s team <team name> <player 1 name> <player 2 name>\'."
         elif numTeams == 2:
             spadesBot.game = Game(spadesBot.teams, maxScore)
             response = spadesBot.game.notification
