@@ -109,7 +109,7 @@ class SpadesDaemon(daemon):
 
 if __name__ == "__main__":
 
-    bot = commands.Bot(command_prefix='>')
+    bot = commands.Bot(command_prefix='.s ')
     spadesBot = SpadesBot(bot)
 
     helpString = "Assemble a fantastic team."
