@@ -141,7 +141,7 @@ if __name__ == "__main__":
         if len(spadesBot.teams) == 1:
             response = response + " You need one more team to start a game."
         elif len(spadesBot.teams) == 2:
-            response = response + " Both teams are here, start a game with -game <maxScore>."
+            response = response + " Both teams are here, start a game with .s game <max score>."
         await spadesBot.notifyAll(response)
 
     helpString = "Start a new game. Two teams must be created before this command."
@@ -151,7 +151,7 @@ if __name__ == "__main__":
         if numTeams <= 1:
             response = "Need to make 2 teams, there's only {}.".format(numTeams)
         elif numTeams > 2:
-            response = "There are too many teams. Get rid of them by making new teams with \"!new t <team name> <user1 name> <user2 name>\"."
+            response = "There are too many teams. Get rid of them by making new teams with \".s team <team name> <player 1 name> <player 2 name>\"."
         elif numTeams == 2:
             spadesBot.game = Game(spadesBot.teams, maxScore)
             response = spadesBot.game.notification
@@ -160,12 +160,11 @@ if __name__ == "__main__":
     helpString = "Deal cards."
     @bot.command(name="deal", help=helpString)
     async def deal(ctx):
-        userid = ctx.author.id
-        player = spadesBot.user_conversion[str(userid)]
-
         if spadesBot.game == None:
-            await ctx.send(WRAP_RESPONSE("A game hasn't been created yet. Make one with \'>game [score]\'"))
+            await spadesBot.notifyAll("A game hasn't been created yet. Make one with \'.s game <max score>\'")
         else:
+            userid = ctx.author.id
+            player = spadesBot.user_conversion[str(userid)]
             # Debug only
             if len(spadesBot.user_conversion) < 4:
                 for p in spadesBot.players:
@@ -181,105 +180,114 @@ if __name__ == "__main__":
     helpString = "Make a bet where <betInput> can be any number, \'n\' for nil, or \'tth\' for ten-two-hundred."
     @bot.command(name="bet", help=helpString)
     async def bet(ctx, betInput):
-        userid = ctx.author.id
-        player = spadesBot.user_conversion[str(userid)]
-
-        bet = BETS.NONE
-        try:
-            betInput = int(betInput)
-            if betInput <= 13:
-                bet = BETS(betInput)
-        except ValueError:
-            if betInput == 'n':
-                bet = BETS.NIL
-            elif betInput == "tth":
-                bet = BETS.TTH
-
-        # Debug only
-        if len(spadesBot.user_conversion) < 4:
-            for p in spadesBot.players:
-                if p.id == player.id:
-                    if spadesBot.game.playerAction(p, PLAYER_ACTIONS.BET, bet):
-                        break
+        if spadesBot.game == None:
+            await spadesBot.notifyAll("A game hasn't been created yet. Make one with \'.s game <max score>\'")
         else:
-            spadesBot.game.playerAction(player, PLAYER_ACTIONS.BET, bet)
+            userid = ctx.author.id
+            player = spadesBot.user_conversion[str(userid)]
 
-        response = spadesBot.game.notification
-        await spadesBot.notifyAll(response)
+            bet = BETS.NONE
+            try:
+                betInput = int(betInput)
+                if betInput <= 13:
+                    bet = BETS(betInput)
+            except ValueError:
+                if betInput == 'n':
+                    bet = BETS.NIL
+                elif betInput == "tth":
+                    bet = BETS.TTH
+
+            # Debug only
+            if len(spadesBot.user_conversion) < 4:
+                for p in spadesBot.players:
+                    if p.id == player.id:
+                        if spadesBot.game.playerAction(p, PLAYER_ACTIONS.BET, bet):
+                            break
+            else:
+                spadesBot.game.playerAction(player, PLAYER_ACTIONS.BET, bet)
+
+            response = spadesBot.game.notification
+            await spadesBot.notifyAll(response)
 
     helpString = "Play a card where <cardIndex> is the order the card is in your hand."
     @bot.command(name="play", help=helpString)
     async def play(ctx, cardIndex: int):
-        userid = ctx.author.id
-        player = spadesBot.user_conversion[str(userid)]
-
-        # Debug only
-        if len(spadesBot.user_conversion) < 4:
-            for p in spadesBot.players:
-                if p.id == player.id:
-                    if spadesBot.game.playerAction(p, PLAYER_ACTIONS.PLAY, cardIndex):
-                        break
+        if spadesBot.game == None:
+            await spadesBot.notifyAll("A game hasn't been created yet. Make one with \'.s game <max score>\'")
         else:
-            spadesBot.game.playerAction(player, PLAYER_ACTIONS.PLAY, cardIndex)
+            userid = ctx.author.id
+            player = spadesBot.user_conversion[str(userid)]
 
-        response = spadesBot.game.notification
-        await spadesBot.notifyAll(response)
+            # Debug only
+            if len(spadesBot.user_conversion) < 4:
+                for p in spadesBot.players:
+                    if p.id == player.id:
+                        if spadesBot.game.playerAction(p, PLAYER_ACTIONS.PLAY, cardIndex):
+                            break
+            else:
+                spadesBot.game.playerAction(player, PLAYER_ACTIONS.PLAY, cardIndex)
+
+            response = spadesBot.game.notification
+            await spadesBot.notifyAll(response)
 
     helpString = "Ask to see your hand."
     @bot.command(name="hand", help=helpString)
     async def show_hand(ctx):
-        userid = ctx.author.id
-        player = spadesBot.user_conversion[str(userid)]
-
-        if ctx.author.dm_channel is None:
-            await ctx.author.create_dm()
-
-        # Debug only
-        if len(spadesBot.user_conversion) < 4:
-            player = spadesBot.game.getPlayerByTurnOrder(spadesBot.game.whoseTurn)
-            
-        response = "Here's your hand, sport:\n"
-        response = response + CARDS2STRING({"cards": player.hand})
-        await ctx.author.dm_channel.send(WRAP_RESPONSE(response))
+        if spadesBot.game == None:
+            await spadesBot.notifyAll("A game hasn't been created yet. Make one with \'.s game <max score>\'")
+        else:
+            userid = ctx.author.id
+            player = spadesBot.user_conversion[str(userid)]
+            # Debug only
+            if len(spadesBot.user_conversion) < 4:
+                player = spadesBot.game.getPlayerByTurnOrder(spadesBot.game.whoseTurn)
+                
+            response = "Here's your hand, sport:\n"
+            response = response + CARDS2STRING({"cards": player.hand})
+            await spadesBot.notifyUser(ctx.author, response)
 
     helpString = "Ask to see the betting info and current books."
     @bot.command(name="books", help=helpString)
     async def show_betting_info(ctx):
-        userid = ctx.author.id
-        player = spadesBot.user_conversion[str(userid)]
-
-        d = spadesBot.game.getBettingInfo(dict)
-        await spadesBot.notifyUser(ctx.author, BET2STRING(d))
+        if spadesBot.game == None:
+            await spadesBot.notifyAll("A game hasn't been created yet. Make one with \'.s game <max score>\'")
+        else:
+            d = spadesBot.game.getBettingInfo(dict)
+            await spadesBot.notifyUser(ctx.author, BET2STRING(d))
 
     helpString = "Ask to see the current game's info."
     @bot.command(name="show", help=helpString)
     async def show_game(ctx):
-        userid = ctx.author.id
+        if spadesBot.game == None:
+            await spadesBot.notifyAll("A game hasn't been created yet. Make one with \'.s game <max score>\'")
+        else:
+            d = spadesBot.game.getScoreInfo(dict)
+            response = SCORE2STRING(d)
 
-        d = spadesBot.game.getScoreInfo(dict)
-        response = SCORE2STRING(d)
+            d = spadesBot.game.getTurnInfo(dict)
+            response = response + TURN2STRING(d)
 
-        d = spadesBot.game.getTurnInfo(dict)
-        response = response + TURN2STRING(d)
+            d = spadesBot.game.getPileInfo(dict)
+            response = response + CARDS2STRING(d)
 
-        d = spadesBot.game.getPileInfo(dict)
-        response = response + CARDS2STRING(d)
-
-        await spadesBot.notifyUser(ctx.author, response)
+            await spadesBot.notifyUser(ctx.author, response)
 
     helpString = "Have a rematch with the same teams. The dealer gets rotated."
     @bot.command(name="rematch", help=helpString)
     async def rematch(ctx, teamName, user1, user2):
-        uc = spadesBot.user_conversion
-        teams = spadesBot.teams
-        players = spadesBot.players
-        maxScore = spadesBot.game.maxScore
+        if spadesBot.game == None:
+            await spadesBot.notifyAll("A game hasn't been created yet. Make one with \'.s game <max score>\'")
+        else:
+            uc = spadesBot.user_conversion
+            teams = spadesBot.teams
+            players = spadesBot.players
+            maxScore = spadesBot.game.maxScore
 
-        spadesBot.reset({"converter": uc, "teams": teams, "players": players, "users": []})
+            spadesBot.reset({"converter": uc, "teams": teams, "players": players, "users": []})
 
-        spadesBot.game = Game(spadesBot.teams, maxScore)
-        response = spadesBot.game.notification
-        await spadesBot.notifyAll(response)
+            spadesBot.game = Game(spadesBot.teams, maxScore)
+            response = spadesBot.game.notification
+            await spadesBot.notifyAll(response)
 
     daemon = SpadesDaemon('/tmp/spadesbot-daemon.pid')
     if len(sys.argv) == 2:
